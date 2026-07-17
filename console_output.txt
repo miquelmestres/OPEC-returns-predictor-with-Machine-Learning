@@ -1,0 +1,432 @@
+======================================================================
+ASSEMBLING MASTER DATASET
+======================================================================
+
+[1] Downloading OPEC-linked equity prices...
+  -> 'Aramco' (2222.SR): 332 weekly observations.
+  -> 'Petrobras' (PBR): 549 weekly observations.
+  -> 'Rosneft' (ROSN.ME): 329 weekly observations.
+  -> 'MISC Berhad' (3816.KL): 549 weekly observations.
+  -> 'IPG' (IPG.KW): 547 weekly observations.
+  -> 'Seplat Energy' (SEPL.L): 549 weekly observations.
+  -> 'US_proxy' (XOP): 549 weekly observations.
+
+[2] Downloading risk-free rate and market return...
+
+[3a] Downloading Fama-French HML factor (weekly)...
+
+[3b] Downloading Brent crude (BZ=F)...
+
+[3c] Downloading US crude oil production (EIA WCRFPUS2)...
+  -> Parsed 550 weekly observations from EIA.
+
+[3d] Downloading USD index (DX-Y.NYB)...
+
+[3e] Downloading 10Y-2Y yield curve slope (FRED T10Y2Y)...
+
+[3f] Downloading shipping-sector ETF proxies (BOAT, SEA)...
+
+[3g] Downloading Caldara-Iacoviello GPR instability index...
+c:\Users\mique\OneDrive\Documents\Miquel\UPF\Príam\RF OPEC\opec_returns_predictor_caldara.py:545: PerformanceWarning: DataFrame is highly fragmented.  This is usually the result of calling `frame.insert` many times, which has poor performance.  Consider joining all columns at once using pd.concat(axis=1) instead. To get a de-fragmented frame, use `newframe = frame.copy()`
+  raw["_date"] = pd.to_datetime(raw[date_col[0]], errors="coerce")
+  -> GPR: 551 weekly rows across 1 country columns: ['GPR']
+c:\Users\mique\OneDrive\Documents\Miquel\UPF\Príam\RF OPEC\opec_returns_predictor_caldara.py:617: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  explanatory = pd.concat(
+
+======================================================================
+MULTICOLLINEARITY DIAGNOSTIC
+======================================================================
+  -> Correlation heatmap saved to 'correlation_heatmap.png'
+
+  Pairs with |correlation| > 0.6 (flagged for interpretability, not automatically dropped):
+    None found -- explanatory set looks reasonably orthogonal.
+
+======================================================================
+PROXY-VS-REAL TICKER DIAGNOSTIC
+======================================================================
+
+  Real tickers in panel:  ['Aramco', 'Petrobras', 'Rosneft', 'MISC Berhad', 'IPG', 'Seplat Energy']
+  Proxy tickers in panel: ['US_proxy']
+
+  Weekly return volatility (std. dev.):
+    Aramco              : 0.0227
+    Petrobras           : 0.0675
+    Rosneft             : 0.0480
+    MISC Berhad         : 0.0234
+    IPG                 : 0.0486
+    Seplat Energy       : 0.0599
+    US_proxy            : 0.0528
+
+  Correlation of the OPEC (US) proxy with each real ticker:
+    US_proxy             vs Aramco         : corr = +0.338
+    US_proxy             vs Petrobras      : corr = +0.549
+    US_proxy             vs Rosneft        : corr = +0.368
+    US_proxy             vs MISC Berhad    : corr = +0.124
+    US_proxy             vs IPG            : corr = +0.012
+    US_proxy             vs Seplat Energy  : corr = +0.312
+
+  Interpretation guide: a low (<0.3) proxy-vs-real correlation suggests the ETF proxy is tracking general energy-sector beta rather than anything specific to OPEC dynamics. 
+  Train: 191 weeks (2021-08-13 to 2025-06-27)
+  Test:  48 weeks (2025-07-04 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: Aramco
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['-0.240', '0.001', '-0.642', '-0.123']
+    Gradient Boosting CV R^2: ['-0.505', '-0.016', '-1.234', '-0.295']
+    Random Forest 95% CI on R^2:     [-0.114, +0.235]  (point: +0.060, contains zero: True)
+    Gradient Boosting 95% CI on R^2: [-0.340, +0.151]  (point: -0.070, contains zero: True)
+    Random Forest             | Test MSE: 0.000370 | Test MAE: 0.014753 | Test R^2: +0.0597
+    Gradient Boosting         | Test MSE: 0.000421 | Test MAE: 0.016140 | Test R^2: -0.0702
+    Naive (historical mean)   | Test MSE: 0.000406 | Test MAE: 0.015529 | Test R^2: -0.0304
+    Random Forest             | Tail(5%) MAE: 0.036037 | Tail(5%) R^2: -19.5436 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.033381 | Tail(5%) R^2: -17.1309 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.033309 | Tail(5%) R^2: -15.6544 | n=3
+
+  Permutation importance -- Aramco (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.187002          0.091422
+             gpr_instability           0.044614          0.043059
+            usd_index_return           0.005656          0.008196
+           lagged_own_return          -0.000284          0.019598
+           yield_curve_slope          -0.000349          0.000636
+                         HML          -0.001714          0.009586
+                  excess_mkt          -0.002981          0.013878
+us_oil_production_pct_change          -0.003383          0.006590
+       shipping_proxy_return          -0.003881          0.005531
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Aramco_Random_Forest.png'
+
+  Permutation importance -- Aramco (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.220413          0.094124
+             gpr_instability           0.116506          0.056116
+                         HML           0.071680          0.050535
+                  excess_mkt           0.033982          0.053751
+           yield_curve_slope           0.018695          0.016105
+            usd_index_return           0.015454          0.043464
+us_oil_production_pct_change           0.014678          0.028348
+       shipping_proxy_return          -0.015270          0.054166
+           lagged_own_return          -0.046143          0.038411
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Aramco_Gradient_Boosting.png'
+  -> Saved to './predictions_Aramco.png'
+  Train: 200 weeks (2021-08-13 to 2025-06-06)
+  Test:  51 weeks (2025-06-13 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: Petrobras
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['0.195', '-0.067', '-0.076', '0.324']
+    Gradient Boosting CV R^2: ['0.157', '-0.407', '-0.393', '0.341']
+    Random Forest 95% CI on R^2:     [-0.168, +0.300]  (point: +0.176, contains zero: True)
+    Gradient Boosting 95% CI on R^2: [-0.395, +0.314]  (point: +0.118, contains zero: True)
+    Random Forest             | Test MSE: 0.001887 | Test MAE: 0.034946 | Test R^2: +0.1758
+    Gradient Boosting         | Test MSE: 0.002021 | Test MAE: 0.035484 | Test R^2: +0.1175
+    Naive (historical mean)   | Test MSE: 0.002308 | Test MAE: 0.038688 | Test R^2: -0.0078
+    Random Forest             | Tail(5%) MAE: 0.055971 | Tail(5%) R^2: -242.3863 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.058821 | Tail(5%) R^2: -314.4833 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.073855 | Tail(5%) R^2: -400.2762 | n=3
+
+  Permutation importance -- Petrobras (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.422366          0.155479
+                         HML           0.056344          0.024758
+       shipping_proxy_return           0.031251          0.042374
+            usd_index_return           0.009936          0.008691
+             gpr_instability           0.008045          0.004177
+us_oil_production_pct_change           0.000036          0.002309
+           yield_curve_slope          -0.000606          0.000624
+                  excess_mkt          -0.002273          0.008055
+           lagged_own_return          -0.021477          0.042541
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Petrobras_Random_Forest.png'
+
+  Permutation importance -- Petrobras (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.447960          0.159908
+                         HML           0.154656          0.071211
+       shipping_proxy_return           0.032268          0.089867
+             gpr_instability           0.014489          0.013961
+           yield_curve_slope           0.005977          0.004160
+us_oil_production_pct_change          -0.002028          0.007383
+            usd_index_return          -0.016391          0.021130
+           lagged_own_return          -0.020822          0.048370
+                  excess_mkt          -0.024651          0.054437
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Petrobras_Gradient_Boosting.png'
+  -> Saved to './predictions_Petrobras.png'
+  Train: 29 weeks (2021-08-13 to 2022-02-25)
+  Test:  8 weeks (2022-04-08 to 2022-05-27)
+
+----------------------------------------------------------------------
+Modeling: Rosneft
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['-3.623', '-0.763', '0.092', '-0.403']
+    Gradient Boosting CV R^2: ['-3.553', '-0.357', '0.073', '-0.579']
+    Random Forest 95% CI on R^2:     [-1.890, -0.470]  (point: -0.545, contains zero: False)
+    Gradient Boosting 95% CI on R^2: [-5.533, -1.954]  (point: -3.133, contains zero: False)
+    Random Forest             | Test MSE: 0.003491 | Test MAE: 0.045907 | Test R^2: -0.5454
+    Gradient Boosting         | Test MSE: 0.009337 | Test MAE: 0.081819 | Test R^2: -3.1335
+    Naive (historical mean)   | Test MSE: 0.002259 | Test MAE: 0.041733 | Test R^2: -0.0001
+    Random Forest             | Tail(5%) MAE: 0.040546 | Tail(5%) R^2: +nan | n=1
+    Gradient Boosting         | Tail(5%) MAE: 0.014910 | Tail(5%) R^2: +nan | n=1
+    Naive (historical mean)   | Tail(5%) MAE: 0.078018 | Tail(5%) R^2: +nan | n=1
+
+  Permutation importance -- Rosneft (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+            usd_index_return           0.019861          0.034163
+             gpr_instability           0.000000          0.000000
+           yield_curve_slope           0.000000          0.000000
+us_oil_production_pct_change          -0.003530          0.005249
+       shipping_proxy_return          -0.005113          0.032826
+                brent_return          -0.007045          0.031202
+                         HML          -0.014519          0.044818
+           lagged_own_return          -0.030318          0.027269
+                  excess_mkt          -0.049830          0.039073
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Rosneft_Random_Forest.png'
+
+  Permutation importance -- Rosneft (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.351860          0.707312
+             gpr_instability           0.000000          0.000000
+us_oil_production_pct_change           0.000000          0.000000
+           yield_curve_slope           0.000000          0.000000
+            usd_index_return          -0.001380          0.017299
+                         HML          -0.019200          0.047688
+                  excess_mkt          -0.039874          0.021144
+           lagged_own_return          -0.054603          0.170044
+       shipping_proxy_return          -0.095735          0.084098
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Rosneft_Gradient_Boosting.png'
+  -> Saved to './predictions_Rosneft.png'
+  Train: 200 weeks (2021-08-13 to 2025-06-06)
+  Test:  51 weeks (2025-06-13 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: MISC Berhad
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['-0.127', '-0.213', '0.098', '-0.037']
+    Gradient Boosting CV R^2: ['-0.310', '-0.893', '0.121', '-0.068']
+    Random Forest 95% CI on R^2:     [-0.126, +0.163]  (point: +0.034, contains zero: True)
+    Gradient Boosting 95% CI on R^2: [-0.400, +0.167]  (point: -0.069, contains zero: True)
+    Random Forest             | Test MSE: 0.000495 | Test MAE: 0.015653 | Test R^2: +0.0336
+    Gradient Boosting         | Test MSE: 0.000547 | Test MAE: 0.016395 | Test R^2: -0.0689
+    Naive (historical mean)   | Test MSE: 0.000513 | Test MAE: 0.015708 | Test R^2: -0.0010
+    Random Forest             | Tail(5%) MAE: 0.041319 | Tail(5%) R^2: -822.1200 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.040481 | Tail(5%) R^2: -832.5138 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.037657 | Tail(5%) R^2: -679.4440 | n=3
+
+  Permutation importance -- MISC Berhad (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+           lagged_own_return           0.060432          0.040867
+       shipping_proxy_return           0.015005          0.039185
+             gpr_instability           0.010969          0.009717
+           yield_curve_slope           0.000945          0.002068
+                  excess_mkt          -0.000905          0.006019
+us_oil_production_pct_change          -0.001953          0.004566
+                brent_return          -0.002929          0.018066
+                         HML          -0.006324          0.004384
+            usd_index_return          -0.011350          0.015700
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_MISC Berhad_Random_Forest.png'
+
+  Permutation importance -- MISC Berhad (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+             gpr_instability           0.067906          0.045588
+           lagged_own_return           0.065877          0.069604
+                         HML           0.028904          0.036056
+       shipping_proxy_return           0.024163          0.073788
+            usd_index_return           0.017969          0.028631
+           yield_curve_slope           0.000084          0.000764
+us_oil_production_pct_change          -0.008028          0.016612
+                brent_return          -0.018201          0.034972
+                  excess_mkt          -0.059146          0.029697
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_MISC Berhad_Gradient_Boosting.png'
+  -> Saved to './predictions_MISC Berhad.png'
+  Train: 200 weeks (2021-08-13 to 2025-06-06)
+  Test:  51 weeks (2025-06-13 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: IPG
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['-0.397', '-0.064', '0.091', '0.087']
+    Gradient Boosting CV R^2: ['-1.745', '-0.245', '-0.271', '-0.113']
+    Random Forest 95% CI on R^2:     [-0.134, +0.064]  (point: +0.016, contains zero: True)
+    Gradient Boosting 95% CI on R^2: [-0.219, +0.093]  (point: -0.024, contains zero: True)
+    Random Forest             | Test MSE: 0.005093 | Test MAE: 0.041418 | Test R^2: +0.0159
+    Gradient Boosting         | Test MSE: 0.005298 | Test MAE: 0.044457 | Test R^2: -0.0238
+    Naive (historical mean)   | Test MSE: 0.005197 | Test MAE: 0.039351 | Test R^2: -0.0043
+    Random Forest             | Tail(5%) MAE: 0.138728 | Tail(5%) R^2: -10.9298 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.146073 | Tail(5%) R^2: -12.0249 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.143208 | Tail(5%) R^2: -11.9518 | n=3
+
+  Permutation importance -- IPG (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+           lagged_own_return           0.034877          0.021257
+             gpr_instability           0.015696          0.017424
+                         HML           0.003717          0.002603
+                brent_return           0.001937          0.008467
+           yield_curve_slope           0.000023          0.000120
+       shipping_proxy_return          -0.001280          0.007130
+            usd_index_return          -0.001785          0.006796
+us_oil_production_pct_change          -0.003177          0.006442
+                  excess_mkt          -0.005232          0.027837
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_IPG_Random_Forest.png'
+
+  Permutation importance -- IPG (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+           lagged_own_return           0.034119          0.036244
+             gpr_instability           0.025864          0.033269
+                  excess_mkt           0.024684          0.033302
+                         HML           0.011218          0.010019
+            usd_index_return           0.010847          0.013216
+       shipping_proxy_return          -0.001888          0.008513
+           yield_curve_slope          -0.005014          0.016949
+                brent_return          -0.007664          0.031200
+us_oil_production_pct_change          -0.017668          0.015000
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_IPG_Gradient_Boosting.png'
+  -> Saved to './predictions_IPG.png'
+  Train: 200 weeks (2021-08-13 to 2025-06-06)
+  Test:  51 weeks (2025-06-13 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: Seplat Energy
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['0.135', '0.070', '-0.189', '-0.243']
+    Gradient Boosting CV R^2: ['-0.193', '-0.287', '-0.193', '-0.543']
+    Random Forest 95% CI on R^2:     [-0.363, +0.125]  (point: -0.019, contains zero: True)
+    Gradient Boosting 95% CI on R^2: [-0.555, +0.056]  (point: -0.159, contains zero: True)
+    Random Forest             | Test MSE: 0.002290 | Test MAE: 0.038864 | Test R^2: -0.0193
+    Gradient Boosting         | Test MSE: 0.002603 | Test MAE: 0.042269 | Test R^2: -0.1586
+    Naive (historical mean)   | Test MSE: 0.002430 | Test MAE: 0.039525 | Test R^2: -0.0817
+    Random Forest             | Tail(5%) MAE: 0.065529 | Tail(5%) R^2: -24.7099 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.087097 | Tail(5%) R^2: -46.0149 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.070713 | Tail(5%) R^2: -28.6058 | n=3
+
+  Permutation importance -- Seplat Energy (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.142327          0.085922
+             gpr_instability           0.035187          0.026262
+                  excess_mkt           0.011522          0.014577
+           lagged_own_return           0.006665          0.004231
+           yield_curve_slope           0.002369          0.002547
+       shipping_proxy_return          -0.004505          0.011305
+us_oil_production_pct_change          -0.005438          0.009326
+                         HML          -0.018225          0.021584
+            usd_index_return          -0.021544          0.014769
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Seplat Energy_Random_Forest.png'
+
+  Permutation importance -- Seplat Energy (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           0.119321          0.069562
+           yield_curve_slope           0.037950          0.025996
+             gpr_instability           0.036797          0.058147
+       shipping_proxy_return           0.029104          0.042080
+           lagged_own_return           0.000396          0.030911
+us_oil_production_pct_change          -0.016842          0.037675
+                         HML          -0.031693          0.037668
+                  excess_mkt          -0.051629          0.057599
+            usd_index_return          -0.061913          0.036931
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_Seplat Energy_Gradient_Boosting.png'
+  -> Saved to './predictions_Seplat Energy.png'
+  Train: 200 weeks (2021-08-13 to 2025-06-06)
+  Test:  51 weeks (2025-06-13 to 2026-05-29)
+
+----------------------------------------------------------------------
+Modeling: US_proxy
+----------------------------------------------------------------------
+  Running time-series cross-validation (R-squared per fold)...
+    Random Forest CV R^2:     ['0.507', '0.568', '0.313', '0.692']
+    Gradient Boosting CV R^2: ['0.501', '0.529', '0.267', '0.782']
+    Random Forest 95% CI on R^2:     [+0.095, +0.660]  (point: +0.516, contains zero: False)
+    Gradient Boosting 95% CI on R^2: [+0.153, +0.602]  (point: +0.433, contains zero: False)
+    Random Forest             | Test MSE: 0.000710 | Test MAE: 0.020818 | Test R^2: +0.5159
+    Gradient Boosting         | Test MSE: 0.000832 | Test MAE: 0.022424 | Test R^2: +0.4326
+    Naive (historical mean)   | Test MSE: 0.001476 | Test MAE: 0.032792 | Test R^2: -0.0061
+    Random Forest             | Tail(5%) MAE: 0.041817 | Tail(5%) R^2: -57.8709 | n=3
+    Gradient Boosting         | Tail(5%) MAE: 0.044700 | Tail(5%) R^2: -85.6412 | n=3
+    Naive (historical mean)   | Tail(5%) MAE: 0.067152 | Tail(5%) R^2: -135.9818 | n=3
+
+  Permutation importance -- US_proxy (Random Forest):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           1.392569          0.248153
+                         HML           0.093181          0.025849
+           lagged_own_return           0.000310          0.001107
+           yield_curve_slope          -0.000744          0.000417
+       shipping_proxy_return          -0.003659          0.026254
+             gpr_instability          -0.003788          0.001245
+            usd_index_return          -0.007596          0.008306
+us_oil_production_pct_change          -0.009560          0.006794
+                  excess_mkt          -0.051981          0.015352
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_US_proxy_Random_Forest.png'
+
+  Permutation importance -- US_proxy (Gradient Boosting):
+                     Feature  Importance (mean)  Importance (std)
+                brent_return           1.249524          0.223891
+                         HML           0.222403          0.058814
+           lagged_own_return           0.019695          0.015288
+us_oil_production_pct_change           0.003156          0.011604
+            usd_index_return          -0.007591          0.021036
+           yield_curve_slope          -0.009061          0.006634
+       shipping_proxy_return          -0.013275          0.043983
+             gpr_instability          -0.045712          0.024582
+                  excess_mkt          -0.068891          0.046750
+  (Negative values are expected and not a bug: on a small test set, shuffling an uninformative feature can occasionally improve the score by chance. Treat near-zero and negative values alike as 'this feature isn't pulling weight,' not as a precise ranking between them.)
+  -> Saved to './feature_importance_US_proxy_Gradient_Boosting.png'
+  -> Saved to './predictions_US_proxy.png'
+
+======================================================================
+SUMMARY: INTERPRETATION
+======================================================================
+
+  Out-of-sample R^2 by company and model:
+    Aramco               | RF: +0.060 | GBM: -0.070 | Naive: -0.030 | Beat naive baseline: yes
+    Petrobras            | RF: +0.176 | GBM: +0.118 | Naive: -0.008 | Beat naive baseline: yes
+    Rosneft              | RF: -0.545 | GBM: -3.133 | Naive: -0.000 | Beat naive baseline: no
+    MISC Berhad          | RF: +0.034 | GBM: -0.069 | Naive: -0.001 | Beat naive baseline: yes
+    IPG                  | RF: +0.016 | GBM: -0.024 | Naive: -0.004 | Beat naive baseline: yes
+    Seplat Energy        | RF: -0.019 | GBM: -0.159 | Naive: -0.082 | Beat naive baseline: yes
+    US_proxy             | RF: +0.516 | GBM: +0.433 | Naive: -0.006 | Beat naive baseline: yes
+
+  Most consistently important features across companies (by mean permutation importance, Random Forest):
+Feature
+brent_return                    0.305175
+HML                             0.016066
+gpr_instability                 0.015818
+lagged_own_return               0.007172
+shipping_proxy_return           0.003974
+yield_curve_slope               0.000234
+usd_index_return               -0.000974
+us_oil_production_pct_change   -0.003858
+excess_mkt                     -0.014526
+
+  Interpretation:
+
+  - If out-of-sample R^2 is low/negative across the board: this is 
+    consistent with a Talebian reading that these returns are dominated by 
+    unpredictable, fat-tailed shocks (wars, surprise OPEC+ decisions)
+    rather than by smoothly varying macro fundamentals. In these cases, no 
+    model class (linear or tree-based), should be expected to explain much 
+    of the week-to-week variation from public macro data alone.
+  - If RF/GBM clearly beat the naive baseline where OLS could not reach
+    significance: this would suggest genuine non-linear interaction effects,
+    which is exactly the kind of regime-dependent effect a linear model
+    cannot represent but a tree can split on directly).
+  - Check the proxy-vs-real diagnostic output above before trusting the
+    "US_proxy" result -- if XOP showed near-zero correlation with the real
+    OPEC tickers, treat that one company's result as "predicting a generic
+    energy-sector ETF," not as "predicting OPEC company returns."
