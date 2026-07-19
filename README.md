@@ -173,4 +173,4 @@ Additionally, even from a non-technical perspective, anyone can notice that the 
 ## Future paths
 
 - The main future path, specially if working for a private company without the reproducibility constraint, could be an analysis of different (paid) instability APIs with fundamental differences on their conflict anaylsis to figure out what exactly affects the oil sector rather than overusing a general "instability" variable as if every shock would affect OPEC companies in a statistically significant way.
-- Investigate why Random Forest so consistently outperforms Gradient Boosting here beyond "small N" or whether another more advanced ML model would do a better work in predicting this small basket of OPEC companies, or even the US_proxy.
+- Investigate whether another more advanced ML model would do a better work in predicting this small basket of OPEC companies, or even the US_proxy.
