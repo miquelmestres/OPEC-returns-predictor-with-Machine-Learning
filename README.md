@@ -110,6 +110,12 @@ This is the part that keeps the R² table above honest. Once autocorrelation-awa
 - **US_proxy**: CI [+0.095, +0.660] (RF) and [+0.153, +0.602] (GBM) — **reliably better than naive**.
 - **Every other company** (Aramco, Petrobras, MISC Berhad, IPG, Seplat): the 95% CI straddles zero in both models. The point estimates look encouraging in places (Petrobras +0.176), but the honest conclusion is that the evidence for genuine predictive skill is statistically indistinguishable from noise for five of the seven names.
 
+### The tail-conditional result (one of the points of the project)
+
+For every company and both model classes, R² computed on just the **worst 5% of test weeks** collapses to deeply negative values (e.g. MISC Berhad's Random Forest tail R² is **−822**, Petrobras's is **−242**, and even US_proxy's is **−58**). Random Forest's tail-window mean absolute error is nonetheless *lower* than the naive baseline's in several cases (e.g. Petrobras: 0.056 vs. naive's 0.074), so this isn't simply the naive model tail being worse across the board, but the R² collapse itself is real and consistent, and with only n=3 tail weeks per company (n=1 for Rosneft). This is also what Taleb would criticize about this model: although it tries to avoid Gaussian frameworks, it still fails to perform properly during the worst shocks (or at least as good as in the normal weeks).
+
+Additionally, even from a non-technical perspective, anyone can notice that the major part of the modeled companies would present a very high R² in 2025, but a completely incorrect model in 2026. This also signals that despite our efforts to account for geopolitical shocks, the biggest oil-related shock in recent history has happened right in these last months coinciding with the start of this year 2026. The model, though, could not catch up with these extreme non-linearities. 
+
 ### Why Rosneft failed so badly
 
 Rosneft's usable sample collapses to **29 training weeks and just 8 test weeks**, spanning 2021-08-13 to 2022-05-27 (compared to ~200 training / ~51 test weeks for most other companies). This is mostly due to Western sanctions following the invasion of Ukraine in February 2022, which disrupted MOEX data availability through third-party feeds (including Yahoo Finance, the one we used in this project) shortly after this window starts. This also appears in wildly unstable CV folds (Random Forest R² swinging from −3.623 to +0.092 across four folds) and a test set too short to ever hold real diagnostic weight to begin with.
@@ -132,13 +138,7 @@ excess_mkt                      -0.015
 
 Brent crude return dominates everything else by an order of magnitude, the least surprising and most reassuring finding here. `gpr_instability` shows small but genuinely positive importance for Aramco, MISC Berhad, IPG, and Seplat (roughly 0.01–0.12 depending on model).
 
-**One flagged anomaly, not smoothed over**: `gpr_instability` shows *exactly* 0.000000 permutation importance (zero mean, zero std across all 30 shuffles) for Rosneft specifically. Given Rosneft's 8-week test window sits almost entirely inside a single GPR reporting month (GPR is monthly, forward-filled to weekly), the feature is very likely close to **constant** across that test set, so shuffling it changes nothing by construction. 
-
-### The tail-conditional result (one of the points of the project)
-
-For every company and both model classes, R² computed on just the **worst 5% of test weeks** collapses to deeply negative values (e.g. MISC Berhad's Random Forest tail R² is **−822**, Petrobras's is **−242**, and even US_proxy's is **−58**). Random Forest's tail-window mean absolute error is nonetheless *lower* than the naive baseline's in several cases (e.g. Petrobras: 0.056 vs. naive's 0.074), so this isn't simply the naive model tail being worse across the board, but the R² collapse itself is real and consistent, and with only n=3 tail weeks per company (n=1 for Rosneft). This is also what Taleb would criticize about this model: although it tries to avoid Gaussian frameworks, it still fails to perform properly during the worst shocks (or at least as good as in the normal weeks).
-
-Additionally, even from a non-technical perspective, anyone can notice that the major part of the modeled companies would present a very high R² in 2025, but a completely incorrect model in 2026. This also signals that despite our efforts to account for geopolitical shocks, the biggest oil-related shock in recent history has happened right in these last months coinciding with the start of this year 2026. The model, though, could not catch up with these extreme non-linearities. 
+**One flagged anomaly**: `gpr_instability` shows *exactly* 0.000000 permutation importance (zero mean, zero std across all 30 shuffles) for Rosneft specifically. Given Rosneft's 8-week test window sits almost entirely inside a single GPR reporting month (GPR is monthly, forward-filled to weekly), the feature is very likely close to **constant** across that test set, so shuffling it changes nothing by construction. 
 
 ---
 
