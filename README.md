@@ -1,6 +1,5 @@
-# OPEC's Returns v2: Predicting OPEC-Linked Equity Returns with Tree Ensembles and Geopolitical Risk
+# OPEC's Returns: Predicting OPEC-Linked Equity Returns with Tree Ensembles and Geopolitical Risk
 
-**Can Random Forests + a real geopolitical-risk index beat a coin flip on OPEC-linked equities — and does "beating a coin flip on average" mean anything once you look at the weeks that actually matter?**
 
 This is part of an initial trilogy exploring tail shocks and non-linear effects by geopolitics covering ML methods, quantitative finance, and geopolitics rationale built through a Nassim Taleb-influenced lens: average-case metrics are a weak (sometimes actively misleading) description of systems dominated by rare, fat-tailed shocks.
 
